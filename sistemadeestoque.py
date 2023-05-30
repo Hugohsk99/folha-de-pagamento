@@ -20,7 +20,7 @@ def add_product(name, price, discount):
 class InventorySystem:
     def __init__(self, master):
         self.master = master
-        master.title("Sistema de Estoque")
+        master.title("Sistema de Almoxarifado")
         master.configure(bg="#F0F0F0")
 
         menu_bar = tk.Menu(master)
@@ -28,7 +28,11 @@ class InventorySystem:
         file_menu.add_command(label="Sair", command=master.quit)
         menu_bar.add_cascade(label="Arquivo", menu=file_menu)
         master.config(menu=menu_bar)
-
+        
+        delete_menu = tk.Menu(menu_bar, tearoff=0)
+        delete_menu.add_command(label="Excluir Produtos", command=self.delete_products)
+        menu_bar.add_cascade(label="Produtos", menu=delete_menu)
+        
         self.main_frame = tk.Frame(master)
         self.main_frame.pack()
 
@@ -62,6 +66,45 @@ class InventorySystem:
             add_product(name, price, discount)
         else:
             tk.messagebox.showerror("Erro", "O desconto deve estar entre 0 e 1.")
+    
+    def delete_products(self):
+        conn = sqlite3.connect('inventory.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM products')
+        products = cursor.fetchall()
+        conn.close()
+
+        if not products:
+            tk.messagebox.showerror("Erro", "Não há produtos cadastrados.")
+            return
+
+        delete_window = tk.Toplevel(self.master)
+        delete_window.title("Excluir Produtos")
+
+        tk.Label(delete_window, text="Selecione o produto para excluir:").pack(pady=10)
+
+        list_box = tk.Listbox(delete_window, width=40, height=10, font=("Arial", 12))
+        list_box.pack()
+
+        for product in products:
+            list_box.insert(tk.END, f"{product[0]} - {product[1]}")
+
+        def delete_product():
+            selected_index = list_box.curselection()
+            if selected_index:
+                product_id = products[selected_index[0]][0]
+                conn = sqlite3.connect('inventory.db')
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM products WHERE id=?', (product_id,))
+                conn.commit()
+                conn.close()
+                list_box.delete(selected_index)
+                tk.messagebox.showinfo("Sucesso", "Produto excluído com sucesso.")
+            else:
+                tk.messagebox.showerror("Erro", "Nenhum produto selecionado.")
+
+        delete_button = tk.Button(delete_window, text="Excluir", command=delete_product)
+        delete_button.pack(pady=10)
 
     def list_products(self):
         conn = sqlite3.connect('inventory.db')
