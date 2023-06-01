@@ -1,0 +1,8 @@
+
+acesso para funcionario cadastrar produtos
+login: funcionario
+senha: 123
+
+acesso para administrador remover e adicionar
+login: admin
+senha: admin

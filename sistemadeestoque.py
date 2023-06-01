@@ -1,149 +1,301 @@
 import tkinter as tk
-import tkinter.messagebox
 import sqlite3
+from datetime import datetime
+from tkinter import messagebox
+from tkinter import simpledialog
 
-def create_table():
-    conn = sqlite3.connect('inventory.db')
+def fazer_login():
+    usuario = entry_usuario.get()
+    senha = entry_senha.get()
+
+    conn = sqlite3.connect("almoxarifado.db")
     cursor = conn.cursor()
-    cursor.execute(
-        'CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, price REAL, discount REAL)')
-    conn.commit()
-    conn.close()
 
-def add_product(name, price, discount):
-    conn = sqlite3.connect('inventory.db')
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO products (name, price, discount) VALUES (?, ?, ?)', (name, price, discount))
-    conn.commit()
-    conn.close()
+    cursor.execute("SELECT * FROM usuarios WHERE nome=? AND senha=?", (usuario, senha))
+    user = cursor.fetchone()
 
-class InventorySystem:
-    def __init__(self, master):
-        self.master = master
-        master.title("Sistema de Almoxarifado")
-        master.configure(bg="#F0F0F0")
-
-        menu_bar = tk.Menu(master)
-        file_menu = tk.Menu(menu_bar, tearoff=0)
-        file_menu.add_command(label="Sair", command=master.quit)
-        menu_bar.add_cascade(label="Arquivo", menu=file_menu)
-        master.config(menu=menu_bar)
-        
-        delete_menu = tk.Menu(menu_bar, tearoff=0)
-        delete_menu.add_command(label="Excluir Produtos", command=self.delete_products)
-        menu_bar.add_cascade(label="Produtos", menu=delete_menu)
-        
-        self.main_frame = tk.Frame(master)
-        self.main_frame.pack()
-
-        tk.Label(self.main_frame, text="Sistema de Estoque", font=("Arial", 18)).grid(row=0, column=0,
-                                                                                      columnspan=2, pady=20)
-
-        tk.Label(self.main_frame, text="Nome do produto:").grid(row=1, column=0, pady=10)
-        self.name_entry = tk.Entry(self.main_frame)
-        self.name_entry.grid(row=1, column=1, pady=10)
-
-        tk.Label(self.main_frame, text="Preço:").grid(row=2, column=0, pady=10)
-        self.price_entry = tk.Entry(self.main_frame)
-        self.price_entry.grid(row=2, column=1, pady=10)
-
-        tk.Label(self.main_frame, text="Desconto (0 a 1):").grid(row=3, column=0, pady=10)
-        self.discount_entry = tk.Entry(self.main_frame)
-        self.discount_entry.grid(row=3, column=1, pady=10)
-
-        tk.Button(self.main_frame, text="Adicionar Produto", command=self.add_product).grid(row=4, column=0,
-                                                                                            pady=10, padx=50)
-        tk.Button(self.main_frame, text="Listar Produtos", command=self.list_products).grid(row=4, column=1,
-                                                                                            pady=10, padx=50)
-
-        tk.Label(self.main_frame, text="rodapé").grid(row=5, column=0, columnspan=2, pady=20)
-
-    def add_product(self):
-        name = self.name_entry.get()
-        price = float(self.price_entry.get())
-        discount = float(self.discount_entry.get())
-        if 0 <= discount <= 1:
-            add_product(name, price, discount)
+    if user:
+        messagebox.showinfo("Sucesso", "Login realizado com sucesso!")
+        frame_login.pack_forget()
+        if user[3] == 1:
+            frame_administrativo.pack()
+            listar_produtos_admin()
         else:
-            tk.messagebox.showerror("Erro", "O desconto deve estar entre 0 e 1.")
-    
-    def delete_products(self):
-        conn = sqlite3.connect('inventory.db')
+            frame_usuario.pack()
+
+        listar_produtos()
+    else:
+        messagebox.showerror("Erro", "Usuário ou senha inválidos.")
+        entry_usuario.delete(0, tk.END)
+        entry_senha.delete(0, tk.END)
+
+    conn.close()
+
+def mostrar_login():
+    frame_administrativo.pack_forget()
+    frame_usuario.pack_forget()
+    frame_login.pack()
+
+    entry_usuario.delete(0, tk.END)
+    entry_senha.delete(0, tk.END)
+
+def criar_tabelas():
+    conn = sqlite3.connect("almoxarifado.db")
+    cursor = conn.cursor()
+
+    cursor.execute("CREATE TABLE IF NOT EXISTS produtos (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, quantidade INTEGER)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, senha TEXT, admin INTEGER)")
+
+    conn.commit()
+    conn.close()
+
+def cadastrar_produto():
+    nome_produto = entry_nome.get()
+    quantidade = entry_quantidade.get()
+
+    conn = sqlite3.connect("almoxarifado.db")
+    cursor = conn.cursor()
+
+    cursor.execute("INSERT INTO produtos (nome, quantidade) VALUES (?, ?)", (nome_produto, quantidade))
+
+    conn.commit()
+    conn.close()
+
+    entry_nome.delete(0, tk.END)
+    entry_quantidade.delete(0, tk.END)
+
+    listar_produtos()  # Atualiza a lista de produtos
+
+    if frame_administrativo.winfo_ismapped():
+        listar_produtos_admin()
+
+def listar_produtos():
+    conn = sqlite3.connect("almoxarifado.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM produtos")
+    rows = cursor.fetchall()
+
+    listbox_itens.delete(0, tk.END)
+    for row in rows:
+        listbox_itens.insert(tk.END, f"{row[1]} - Quantidade: {row[2]}")
+
+    conn.close()
+
+def listar_produtos_admin():
+    conn = sqlite3.connect("almoxarifado.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM produtos")
+    rows = cursor.fetchall()
+
+    listbox_itens.delete(0, tk.END)
+    for row in rows:
+        listbox_itens.insert(tk.END, f"{row[0]} - {row[1]} - Quantidade: {row[2]}")
+
+    conn.close()
+
+def remover_produto():
+    selected_product = listbox_itens.curselection()
+    if selected_product:
+        product = listbox_itens.get(selected_product)
+        product_name = product.split(" - ")[0]
+
+        conn = sqlite3.connect("almoxarifado.db")
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM products')
-        products = cursor.fetchall()
+
+        cursor.execute("DELETE FROM produtos WHERE nome=?", (product_name,))
+        messagebox.showinfo("Sucesso", "Produto removido com sucesso!")
+        
+        conn.commit()
         conn.close()
 
-        if not products:
-            tk.messagebox.showerror("Erro", "Não há produtos cadastrados.")
-            return
+        listar_produtos()
+        if frame_administrativo.winfo_ismapped():
+            listar_produtos_admin()
 
-        delete_window = tk.Toplevel(self.master)
-        delete_window.title("Excluir Produtos")
 
-        tk.Label(delete_window, text="Selecione o produto para excluir:").pack(pady=10)
+def listar_produtos_admin():
+    conn = sqlite3.connect("almoxarifado.db")
+    cursor = conn.cursor()
 
-        list_box = tk.Listbox(delete_window, width=40, height=10, font=("Arial", 12))
-        list_box.pack()
+    cursor.execute("SELECT * FROM produtos")
+    rows = cursor.fetchall()
 
-        for product in products:
-            list_box.insert(tk.END, f"{product[0]} - {product[1]}")
+    listbox_itens.delete(0, tk.END)
+    for row in rows:
+        listbox_itens.insert(tk.END, f"{row[0]} - {row[1]} - Quantidade: {row[2]}")
 
-        def delete_product():
-            selected_index = list_box.curselection()
-            if selected_index:
-                product_id = products[selected_index[0]][0]
-                conn = sqlite3.connect('inventory.db')
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM products WHERE id=?', (product_id,))
-                conn.commit()
-                conn.close()
-                list_box.delete(selected_index)
-                tk.messagebox.showinfo("Sucesso", "Produto excluído com sucesso.")
-            else:
-                tk.messagebox.showerror("Erro", "Nenhum produto selecionado.")
+    conn.close()
 
-        delete_button = tk.Button(delete_window, text="Excluir", command=delete_product)
-        delete_button.pack(pady=10)
 
-    def list_products(self):
-        conn = sqlite3.connect('inventory.db')
+def fazer_logout():
+    frame_usuario.pack_forget()
+    frame_administrativo.pack_forget()
+    mostrar_login()
+    messagebox.showinfo("Sucesso", "Logout realizado com sucesso!")
+
+def cadastrar_usuario():
+    nome_usuario = entry_nome_usuario.get()
+    senha = entry_senha_usuario.get()
+    admin = int(var_admin.get())
+
+    conn = sqlite3.connect("almoxarifado.db")
+    cursor = conn.cursor()
+
+    cursor.execute("INSERT INTO usuarios (nome, senha, admin) VALUES (?, ?, ?)", (nome_usuario, senha, admin))
+
+    conn.commit()
+    conn.close()
+
+    entry_nome_usuario.delete(0, tk.END)
+    entry_senha_usuario.delete(0, tk.END)
+    var_admin.set(0)
+
+    messagebox.showinfo("Sucesso", "Usuário cadastrado com sucesso!")
+
+def remover_usuario():
+    selected_user = listbox_usuarios.curselection()
+    if selected_user:
+        user_id = listbox_usuarios.get(selected_user).split(" - ")[0]
+
+        conn = sqlite3.connect("almoxarifado.db")
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM products')
-        products = cursor.fetchall()
+
+        cursor.execute("DELETE FROM usuarios WHERE id=?", (user_id,))
+
+        conn.commit()
         conn.close()
+        messagebox.showinfo("Sucesso", "Usuário removido com sucesso!")
+        listar_usuarios()
 
-        if not products:
-            tk.messagebox.showerror("Erro", "Não há produtos cadastrados.")
-            return
+def listar_usuarios():
+    conn = sqlite3.connect("almoxarifado.db")
+    cursor = conn.cursor()
 
-        list_window = tk.Toplevel(self.master)
-        list_window.title("Produtos")
+    cursor.execute("SELECT * FROM usuarios")
+    rows = cursor.fetchall()
 
-        table = tk.Frame(list_window)
-        table.pack()
+    listbox_usuarios.delete(0, tk.END)
+    for row in rows:
+        user_info = f"{row[0]} - {row[1]}"
+        if row[3] == 1:
+            user_info += " (Admin)"
+        listbox_usuarios.insert(tk.END, user_info)
 
-        header = ["ID", "Nome", "Preço", "Desconto"]
-        for i, h in enumerate(header):
-            tk.Label(table, text=h, font=("Arial", 12, "bold"), pady=5).grid(row=0, column=i)
+    conn.close()
 
-        for row, product in enumerate(products, start=1):
-            id_, name, price, discount = product
-            formatted_price = f"{price:.2f}"
-            formatted_discount = f"{discount:.2%}"
+def alterar_senha_usuario():
+    selected_user = listbox_usuarios.curselection()
+    if selected_user:
+        user_id = listbox_usuarios.get(selected_user).split(" - ")[0]
 
-            tk.Label(table, text=id_).grid(row=row, column=0)
-            tk.Label(table, text=name).grid(row=row, column=1)
-            tk.Label(table, text=formatted_price).grid(row=row, column=2)
-            tk.Label(table, text=formatted_discount).grid(row=row, column=3)
+        nova_senha = tk.simpledialog.askstring("Alterar Senha", "Digite a nova senha para o usuário:")
 
-        list_window.mainloop()
+        if nova_senha:
+            conn = sqlite3.connect("almoxarifado.db")
+            cursor = conn.cursor()
 
-create_table()
+            cursor.execute("UPDATE usuarios SET senha=? WHERE id=?", (nova_senha, user_id))
+
+            conn.commit()
+            conn.close()
+            messagebox.showinfo("Sucesso", "Senha do usuário alterada com sucesso!")
+            listar_usuarios()
+            
 root = tk.Tk()
-root.title("Sistema de Estoque")
+root.title("Almoxarifado")
+root.geometry("400x400")
 
-# Cria o menu
-InventorySystem(root)
-# Inicializa o loop da janela principal
+frame_login = tk.Frame(root)
+frame_administrativo = tk.Frame(root)
+frame_usuario = tk.Frame(root)
+
+label_usuario = tk.Label(frame_login, text="Usuário:")
+label_usuario.pack()
+
+entry_usuario = tk.Entry(frame_login)
+entry_usuario.pack()
+
+label_senha = tk.Label(frame_login, text="Senha:")
+label_senha.pack()
+
+entry_senha = tk.Entry(frame_login, show="*")
+entry_senha.pack()
+
+button_login = tk.Button(frame_login, text="Login", command=fazer_login)
+button_login.pack()
+
+label_nome = tk.Label(frame_usuario, text="Nome do Produto:")
+label_nome.pack()
+
+entry_nome = tk.Entry(frame_usuario)
+entry_nome.pack()
+
+label_quantidade = tk.Label(frame_usuario, text="Quantidade:")
+label_quantidade.pack()
+
+entry_quantidade = tk.Entry(frame_usuario)
+entry_quantidade.pack()
+
+button_cadastrar_produto = tk.Button(frame_usuario, text="Cadastrar Produto", command=cadastrar_produto)
+button_cadastrar_produto.pack()
+
+button_fazer_logout = tk.Button(frame_usuario, text="Logout", command=fazer_logout)
+button_fazer_logout.pack()
+
+listbox_itens = tk.Listbox(frame_usuario, width=50)
+listbox_itens.pack()
+
+button_remover_produto = tk.Button(frame_usuario, text="Remover Produto", command=remover_produto)
+button_remover_produto.pack()
+
+button_fazer_logout = tk.Button(frame_administrativo, text="Logout", command=fazer_logout)
+button_fazer_logout.pack()
+
+label_nome_usuario = tk.Label(frame_administrativo, text="Nome do Usuário:")
+label_nome_usuario.pack()
+
+entry_nome_usuario = tk.Entry(frame_administrativo)
+entry_nome_usuario.pack()
+
+label_senha_usuario = tk.Label(frame_administrativo, text="Senha:")
+label_senha_usuario.pack()
+
+entry_senha_usuario = tk.Entry(frame_administrativo, show="*")
+entry_senha_usuario.pack()
+
+label_admin = tk.Label(frame_administrativo, text="Admin:")
+label_admin.pack()
+
+var_admin = tk.IntVar()
+check_admin = tk.Checkbutton(frame_administrativo, text="Administrador", variable=var_admin)
+check_admin.pack()
+
+button_cadastrar_usuario = tk.Button(frame_administrativo, text="Cadastrar Usuário", command=cadastrar_usuario)
+button_cadastrar_usuario.pack()
+
+listbox_usuarios = tk.Listbox(frame_administrativo, width=40)
+listbox_usuarios.pack()
+
+button_remover_usuario = tk.Button(frame_administrativo, text="Remover Usuário", command=remover_usuario)
+button_remover_usuario.pack()
+
+button_alterar_senha_usuario = tk.Button(frame_administrativo, text="Alterar Senha do Usuário", command=alterar_senha_usuario)
+button_alterar_senha_usuario.pack()
+
+criar_tabelas()
+
+mostrar_login()
+
+def atualizar_janela():
+    listar_produtos()
+    if frame_administrativo.winfo_ismapped():
+        listar_produtos_admin()
+        listar_usuarios()
+    root.after(10000, atualizar_janela)
+listar_produtos()
+root.after(10000, listar_produtos)
+root.after(10000, atualizar_janela)
+
 root.mainloop()
