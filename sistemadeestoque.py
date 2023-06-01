@@ -184,105 +184,84 @@ def listar_usuarios():
         listbox_usuarios.insert(tk.END, user_info)
 
     conn.close()
-
-def alterar_senha_usuario():
-    selected_user = listbox_usuarios.curselection()
-    if selected_user:
-        user_id = listbox_usuarios.get(selected_user).split(" - ")[0]
-
-        nova_senha = tk.simpledialog.askstring("Alterar Senha", "Digite a nova senha para o usuário:")
-
-        if nova_senha:
-            conn = sqlite3.connect("almoxarifado.db")
-            cursor = conn.cursor()
-
-            cursor.execute("UPDATE usuarios SET senha=? WHERE id=?", (nova_senha, user_id))
-
-            conn.commit()
-            conn.close()
-            messagebox.showinfo("Sucesso", "Senha do usuário alterada com sucesso!")
-            listar_usuarios()
-            
 root = tk.Tk()
-root.title("Almoxarifado")
-root.geometry("400x400")
+root.title("Sistema de Estoque")
+root.geometry("300x250")
+root.configure(bg='lightgrey')
 
-frame_login = tk.Frame(root)
-frame_administrativo = tk.Frame(root)
-frame_usuario = tk.Frame(root)
+frame_login = tk.Frame(root, bg='lightgrey')
+frame_administrativo = tk.Frame(root, bg='lightgrey')
+frame_usuario = tk.Frame(root, bg='lightgrey')
 
-label_usuario = tk.Label(frame_login, text="Usuário:")
+label_usuario = tk.Label(frame_login, text="Usuário:", bg='lightgrey')
 label_usuario.pack()
 
 entry_usuario = tk.Entry(frame_login)
-entry_usuario.pack()
+entry_usuario.pack(pady=5)
 
-label_senha = tk.Label(frame_login, text="Senha:")
+label_senha = tk.Label(frame_login, text="Senha:", bg='lightgrey')
 label_senha.pack()
 
 entry_senha = tk.Entry(frame_login, show="*")
-entry_senha.pack()
+entry_senha.pack(pady=5)
 
-button_login = tk.Button(frame_login, text="Login", command=fazer_login)
-button_login.pack()
+button_login = tk.Button(frame_login, text="Login", command=fazer_login, bg='skyblue', fg='white')
+button_login.pack(pady=5)
 
-label_nome = tk.Label(frame_usuario, text="Nome do Produto:")
+label_nome = tk.Label(frame_usuario, text="Nome do Produto:", bg='lightgrey')
 label_nome.pack()
 
 entry_nome = tk.Entry(frame_usuario)
-entry_nome.pack()
+entry_nome.pack(pady=5)
 
-label_quantidade = tk.Label(frame_usuario, text="Quantidade:")
+label_quantidade = tk.Label(frame_usuario, text="Quantidade:", bg='lightgrey')
 label_quantidade.pack()
 
 entry_quantidade = tk.Entry(frame_usuario)
-entry_quantidade.pack()
+entry_quantidade.pack(pady=5)
 
-button_cadastrar_produto = tk.Button(frame_usuario, text="Cadastrar Produto", command=cadastrar_produto)
-button_cadastrar_produto.pack()
+button_cadastrar_produto = tk.Button(frame_usuario, text="Cadastrar Produto", command=cadastrar_produto, bg='skyblue', fg='white')
+button_cadastrar_produto.pack(pady=5)
 
-button_fazer_logout = tk.Button(frame_usuario, text="Logout", command=fazer_logout)
-button_fazer_logout.pack()
+button_fazer_logout = tk.Button(frame_usuario, text="Logout", command=fazer_logout, bg='skyblue', fg='white')
+button_fazer_logout.pack(pady=5)
 
 listbox_itens = tk.Listbox(frame_usuario, width=50)
-listbox_itens.pack()
+listbox_itens.pack(pady=5)
 
-button_remover_produto = tk.Button(frame_usuario, text="Remover Produto", command=remover_produto)
-button_remover_produto.pack()
+button_remover_produto = tk.Button(frame_usuario, text="Remover Produto", command=remover_produto, bg='skyblue', fg='white')
+button_remover_produto.pack(pady=5)
 
-button_fazer_logout = tk.Button(frame_administrativo, text="Logout", command=fazer_logout)
-button_fazer_logout.pack()
+button_fazer_logout = tk.Button(frame_administrativo, text="Logout", command=fazer_logout, bg='skyblue', fg='white')
+button_fazer_logout.pack(pady=5)
 
-label_nome_usuario = tk.Label(frame_administrativo, text="Nome do Usuário:")
+label_nome_usuario = tk.Label(frame_administrativo, text="Nome do Usuário:", bg='lightgrey')
 label_nome_usuario.pack()
 
 entry_nome_usuario = tk.Entry(frame_administrativo)
-entry_nome_usuario.pack()
+entry_nome_usuario.pack(pady=5)
 
-label_senha_usuario = tk.Label(frame_administrativo, text="Senha:")
+label_senha_usuario = tk.Label(frame_administrativo, text="Senha:", bg='lightgrey')
 label_senha_usuario.pack()
 
 entry_senha_usuario = tk.Entry(frame_administrativo, show="*")
-entry_senha_usuario.pack()
+entry_senha_usuario.pack(pady=5)
 
-label_admin = tk.Label(frame_administrativo, text="Admin:")
+label_admin = tk.Label(frame_administrativo, text="Admin:", bg='lightgrey')
 label_admin.pack()
 
 var_admin = tk.IntVar()
-check_admin = tk.Checkbutton(frame_administrativo, text="Administrador", variable=var_admin)
-check_admin.pack()
+check_admin = tk.Checkbutton(frame_administrativo, text="Administrador", variable=var_admin, bg='lightgrey')
+check_admin.pack(pady=5)
 
-button_cadastrar_usuario = tk.Button(frame_administrativo, text="Cadastrar Usuário", command=cadastrar_usuario)
-button_cadastrar_usuario.pack()
+button_cadastrar_usuario = tk.Button(frame_administrativo, text="Cadastrar Usuário", command=cadastrar_usuario, bg='skyblue', fg='white')
+button_cadastrar_usuario.pack(pady=5)
 
 listbox_usuarios = tk.Listbox(frame_administrativo, width=40)
-listbox_usuarios.pack()
+listbox_usuarios.pack(pady=5)
 
-button_remover_usuario = tk.Button(frame_administrativo, text="Remover Usuário", command=remover_usuario)
-button_remover_usuario.pack()
-
-button_alterar_senha_usuario = tk.Button(frame_administrativo, text="Alterar Senha do Usuário", command=alterar_senha_usuario)
-button_alterar_senha_usuario.pack()
+button_remover_usuario = tk.Button(frame_administrativo, text="Remover Usuário", command=remover_usuario, bg='skyblue', fg='white')
+button_remover_usuario.pack(pady=5)
 
 criar_tabelas()
 
